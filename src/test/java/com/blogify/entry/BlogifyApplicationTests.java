@@ -1,0 +1,13 @@
+package com.blogify.entry;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+
+@SpringBootTest
+class BlogifyApplicationTests {
+
+	@Test
+	void contextLoads() {
+	}
+
+}
