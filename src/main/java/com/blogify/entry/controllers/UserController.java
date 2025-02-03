@@ -2,8 +2,10 @@ package com.blogify.entry.controllers;
 
 import com.blogify.entry.dtos.userDtos.UserRequestDtos;
 import com.blogify.entry.dtos.userDtos.UserResponseDtos;
+import com.blogify.entry.dtos.userDtos.userPartialRequestDtos;
 import com.blogify.entry.enteties.User;
 import com.blogify.entry.services.UserService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -28,7 +30,7 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<UserResponseDtos> createUser(@RequestBody UserRequestDtos userRequestDtos){
+    public ResponseEntity<UserResponseDtos> createUser(@Valid @RequestBody UserRequestDtos userRequestDtos){
         User user=userService.covertToUser(userRequestDtos);
         User createduser= userService.create(user);
         UserResponseDtos userResponseDtos=userService.covertToUserResponseDto(createduser);
@@ -42,8 +44,8 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UserResponseDtos> updatebyid(@PathVariable int id,@RequestBody UserRequestDtos userRequestDtos){
-        User user= userService.covertToUser(userRequestDtos);
+    public ResponseEntity<UserResponseDtos> updatebyid(@PathVariable int id,@Valid @RequestBody userPartialRequestDtos userPartialRequestDtos){
+        User user= userService.covertToUser(userPartialRequestDtos);
         User updateduser=userService.update(id,user);
         UserResponseDtos userResponseDtos=userService.covertToUserResponseDto(updateduser);
         return ResponseEntity.ok(userResponseDtos);

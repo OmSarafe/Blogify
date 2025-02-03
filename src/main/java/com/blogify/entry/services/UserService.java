@@ -2,6 +2,7 @@ package com.blogify.entry.services;
 
 import com.blogify.entry.dtos.userDtos.UserRequestDtos;
 import com.blogify.entry.dtos.userDtos.UserResponseDtos;
+import com.blogify.entry.dtos.userDtos.userPartialRequestDtos;
 import com.blogify.entry.enteties.User;
 import com.blogify.entry.repositories.UserRepositories;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,6 +60,14 @@ public class UserService {
         user.setUsername(userRequestDtos.getUsername());
         user.setPassword(userRequestDtos.getPassword());
         user.setEmail(userRequestDtos.getEmail());
+        return  user;
+    }
+
+    public  User covertToUser(userPartialRequestDtos userPartialRequestDtos){
+        User user=new User();
+        user.setUsername(userPartialRequestDtos.getUsername());
+        user.setPassword(userPartialRequestDtos.getPassword());
+        user.setEmail(userPartialRequestDtos.getEmail());
         return  user;
     }
 
