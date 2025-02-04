@@ -18,6 +18,12 @@ public class UserController {
     @Autowired
     UserService userService;
 
+    @GetMapping("/{id}")
+    public  ResponseEntity<User>getuserbyid(@PathVariable int id){
+        User byId = userService.getById(id);
+        return ResponseEntity.ok(byId);
+
+    }
     @GetMapping
     public ResponseEntity<Page<UserResponseDtos>>getAllUsers(
             @RequestParam(defaultValue = "0") int page,
@@ -43,7 +49,7 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    @PutMapping("/{id}")
+    @PostMapping("/{id}")
     public ResponseEntity<UserResponseDtos> updatebyid(@PathVariable int id,@Valid @RequestBody userPartialRequestDtos userPartialRequestDtos){
         User user= userService.covertToUser(userPartialRequestDtos);
         User updateduser=userService.update(id,user);
