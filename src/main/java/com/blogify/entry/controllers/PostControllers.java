@@ -44,9 +44,9 @@ public class PostControllers {
        return  ResponseEntity.ok(posts);
     }
 
-    @PostMapping("")
-    public ResponseEntity<PostResponseDto> createPost(@RequestBody PostRequestDtos postRequestDtos){
-        Post postResponse= postServices.create(postServices.covertToPost(postRequestDtos));
+    @PostMapping("/user/{userId}")
+    public ResponseEntity<PostResponseDto> createPost(@RequestBody PostRequestDtos postRequestDtos,@PathVariable int userId){
+        Post postResponse= postServices.create(postServices.covertToPost(postRequestDtos),userId);
         return new ResponseEntity<PostResponseDto>(postServices.convertToPostResponseDtos(
                 postResponse), HttpStatus.CREATED);
     }
@@ -77,26 +77,21 @@ public class PostControllers {
                 (post -> postServices.convertToPostResponseDtos(post)).collect(Collectors.toList()),HttpStatus.OK);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<PostResponseDto> updatePostById(@PathVariable int id, @RequestBody PostRequestDtos postRequestDtos){
-        Post postResponse = postServices.update(id, postServices.covertToPost(postRequestDtos));
+    @PutMapping("/{id}/user/{userId}")
+    public ResponseEntity<PostResponseDto> updatePostById(@PathVariable int id, @RequestBody PostRequestDtos postRequestDtos,@PathVariable int userId){
+        Post postResponse = postServices.update(id, postServices.covertToPost(postRequestDtos),userId);
         return new ResponseEntity<PostResponseDto> (postServices.convertToPostResponseDtos(postResponse), HttpStatus.OK);
     }
 
-    @PatchMapping("/{id}")
-    public  ResponseEntity<PostResponseDto>  updatePartialPostById(@PathVariable int id, @RequestBody PostRequestDtos postRequestDtos){
-        Post oldPost = postServices.getPost(id);
-        oldPost.setTitle(postRequestDtos.getTitle() != null ? postRequestDtos.getTitle() : oldPost.getTitle());
-        oldPost.setDescription(postRequestDtos.getDescription() != null ? postRequestDtos.getDescription() : oldPost.getDescription());
-        oldPost.setTags(!postRequestDtos.getTags().isEmpty()?
-                postRequestDtos.getTags().stream().map(name -> new Tag(name)).collect(Collectors.toSet()) : oldPost.getTags() );
-        Post postResponse = postServices.update(id, oldPost);
-        return new ResponseEntity<PostResponseDto>(postServices.convertToPostResponseDtos(postResponse) , HttpStatus.OK);
+    @PatchMapping("/{id}/user/{userId}")
+    public  ResponseEntity<PostResponseDto>  updatePartialPostById(@PathVariable int id, @RequestBody PostRequestDtos postRequestDtos,@PathVariable int userId){
+        Post updatedPost = postServices.update(id, postServices.covertToPost(postRequestDtos), userId);
+        return ResponseEntity.ok(postServices.convertToPostResponseDtos(updatedPost));
     }
 
-    @DeleteMapping("/{id}")
-    public  ResponseEntity<?> deletePostById(@PathVariable int id){
-        postServices.delete(id);
+    @DeleteMapping("/{id}/user/{userId}")
+    public  ResponseEntity<?> deletePostById(@PathVariable int id,@PathVariable int userId){
+        postServices.delete(id,userId);
         return new ResponseEntity<>("Post Deleted Successfully", HttpStatus.NO_CONTENT);
     }
 

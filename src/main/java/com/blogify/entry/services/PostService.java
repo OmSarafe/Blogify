@@ -1,11 +1,14 @@
 package com.blogify.entry.services;
 
+import com.blogify.entry.dtos.userDtos.UserAuthorResponseDtos;
 import com.blogify.entry.enteties.Post;
 import com.blogify.entry.enteties.Tag;
+import com.blogify.entry.enteties.User;
 import com.blogify.entry.repositories.PostRepositories;
 import com.blogify.entry.dtos.postDtos.PostRequestDtos;
 import com.blogify.entry.dtos.postDtos.PostResponseDto;
 import com.blogify.entry.repositories.TagsRepositories;
+import com.blogify.entry.repositories.UserRepositories;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -27,12 +30,20 @@ public class PostService {
     @Autowired
     TagsRepositories tagsRepositories;
 
-    public Post create(Post post){
-        Set<Tag> persistedTags = post.getTags().stream().
-                map(tag -> tagsRepositories.findByName(tag.getName()).orElseGet(()
-                        ->tagsRepositories.save(tag))).collect(Collectors.toSet());
+    @Autowired
+    UserService userService;
 
-        post.setTags(persistedTags);
+    @Autowired
+    private UserRepositories userRepositories;
+
+    private Set<Tag>persistTags(Set<Tag>tags){
+        return tags.stream().map(tag->tagsRepositories.findByName(tag.getName()).orElseGet(()->tagsRepositories.save(tag))).collect(Collectors.toSet());
+    }
+
+    public Post create(Post post,int userId){
+        User user = userService.getById(userId);
+        post.setTags(persistTags(post.getTags()));
+        post.setUser(user);
         return postRepositories.save(post);
     }
 
@@ -47,7 +58,7 @@ public class PostService {
 
     public Post getPost(int id) {
         return postRepositories.findById(id).orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User with id " + id+ " not found"));
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post with id " + id+ " not found"));
     }
 
     public List<Post>search(String value){
@@ -63,21 +74,30 @@ public class PostService {
     public  List<Post> getByTagName(String tagName){
         return  postRepositories.findByTagsName(tagName);
     }
-    public Post update(int id, Post post){
-        getPost(id);
-        post.setId(id);
-        Set<Tag> persistedTags = post.getTags().stream().map(
-                tag -> tagsRepositories.findByName(tag.getName()).orElseGet(()->tagsRepositories.save(tag))).collect(Collectors.toSet());
-        post.setTags(persistedTags);
-        return postRepositories.save(post);
+    public Post update(int id, Post post,int userId){
+        User user = userService.getById(userId);
+        Post existingpost = user.getPosts().stream().filter(dbUser -> dbUser.getId() == id).findFirst().orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post with id: " + id + " not Found"));
+        if (post.getTitle()!=null){
+            existingpost.setTitle(post.getTitle());
+        }
+        if (post.getDescription()!=null){
+            existingpost.setDescription(post.getDescription());
+        }
+        if (post.getTags().isEmpty()){
+            existingpost.setTags(persistTags(post.getTags()));
+        }
+        return postRepositories.save(existingpost);
     }
 
-    public void delete(int id){
-        Post post = postRepositories.findById(id).orElseThrow(() ->
-                new ResponseStatusException(HttpStatus.NOT_FOUND, "Post with id " + id+ " not found "));
-                post.setTags(new HashSet<>());
-                postRepositories.save(post);
-        postRepositories.deleteById(id);
+    public void delete(int id,int userId){
+        User user = userService.getById(userId);
+        Post existingPost=user.getPosts().stream().filter(post -> post.getId()== id).
+                findFirst().orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Post With id :"+id+" not found"));
+        user.getPosts().removeIf(post -> post.getId() ==id);
+        existingPost.setTags(new HashSet<>());
+        postRepositories.delete(existingPost);
+        userRepositories.save(user);
     }
 
     public Post covertToPost(PostRequestDtos postRequestDtos) {
@@ -89,8 +109,21 @@ public class PostService {
         return post;
     }
     public PostResponseDto convertToPostResponseDtos(Post post) {
-        return  new PostResponseDto(post.getId(), post.getTitle(), post.getDescription(),
-                post.getTags().stream().map(tag -> tag.getName()).collect(Collectors
-                        .toSet()),post.getCreateddate(),post.getLastmodifieddate());
+        PostResponseDto postResponseDto=new PostResponseDto();
+        postResponseDto.setId(post.getId());
+        postResponseDto.setTitle(post.getTitle());
+        postResponseDto.setDescription(post.getDescription());
+        postResponseDto.setTags(post.getTags().stream().map(Tag::getName).collect(Collectors.toSet()));
+        postResponseDto.setAuthor(covertToUserAuthorResponseDto(post.getUser()));
+        postResponseDto.setCreateddate(post.getCreateddate());
+        postResponseDto.setLastmodifieddate(post.getLastmodifieddate());
+        return postResponseDto;
+    }
+
+    public UserAuthorResponseDtos covertToUserAuthorResponseDto(User user){
+        UserAuthorResponseDtos userAuthorResponseDtos=new UserAuthorResponseDtos();
+        userAuthorResponseDtos.setId(user.getId());
+        userAuthorResponseDtos.setUsername(user.getUsername());
+        return userAuthorResponseDtos;
     }
 }
