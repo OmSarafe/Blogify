@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.awt.*;
 import java.time.LocalDateTime;
 import java.util.Set;
 
@@ -19,4 +20,5 @@ public class PostResponseDto {
     private LocalDateTime createddate;
     private LocalDateTime lastmodifieddate;
     private UserAuthorResponseDtos author;
+    private String imageUrl;
 }

@@ -16,8 +16,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -36,14 +39,27 @@ public class PostService {
     @Autowired
     private UserRepositories userRepositories;
 
+    @Autowired
+    ImageService imageService;
+
     private Set<Tag>persistTags(Set<Tag>tags){
         return tags.stream().map(tag->tagsRepositories.findByName(tag.getName()).orElseGet(()->tagsRepositories.save(tag))).collect(Collectors.toSet());
     }
 
-    public Post create(Post post,int userId){
+    public Post create(Post post, MultipartFile image, int userId){
+        if (image == null || image.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No image provided");
+        }
         User user = userService.getById(userId);
         post.setTags(persistTags(post.getTags()));
         post.setUser(user);
+
+        try {
+            post.setImageUrl(imageService.saveImage(image));
+        } catch (IOException | NoSuchAlgorithmException e) {
+            System.out.printf("e"+e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"Failed to upload image");
+        }
         return postRepositories.save(post);
     }
 
@@ -117,6 +133,7 @@ public class PostService {
         postResponseDto.setAuthor(covertToUserAuthorResponseDto(post.getUser()));
         postResponseDto.setCreateddate(post.getCreateddate());
         postResponseDto.setLastmodifieddate(post.getLastmodifieddate());
+        postResponseDto.setImageUrl(post.getImageUrl());
         return postResponseDto;
     }
 
@@ -127,3 +144,11 @@ public class PostService {
         return userAuthorResponseDtos;
     }
 }
+
+
+
+
+
+
+
+
