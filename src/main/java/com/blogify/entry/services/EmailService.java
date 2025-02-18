@@ -32,7 +32,8 @@ public class EmailService {
         javaMailSender.send(message);
     }
 
-    @Scheduled(cron = " 30 45 20 * * ?")
+//    @Scheduled(fixedRate = 2000)
+    @Scheduled(cron = " 30 17 19 * * ?")
     @Async
     public void sendPromotionalEmails(){
         List<User>users =userRepositories.findAll();

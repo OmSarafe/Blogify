@@ -4,6 +4,10 @@ server:
     context-path: /test/api/${spring.application.name}
 
 spring:
+#  security:
+#    user:
+#      name: om
+#      password: om@1234
   datasource:
     url: jdbc:mysql://localhost:3306/bloghive_test
     username: root
@@ -15,3 +19,15 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
+  mail:
+    port: '587'
+    properties:
+      mail:
+        smtp:
+          auth: 'true'
+          starttls:
+            enable: 'true'
+            required: 'true'
+    host: smtp.gmail.com
+    username: omsarafe@gmail.com
+    password: kcsk guue kptm hqve

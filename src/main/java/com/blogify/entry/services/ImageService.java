@@ -70,4 +70,6 @@ public class ImageService {
     private String getFileExtension(String filename){
         return filename.contains(".")? filename.substring(filename.lastIndexOf(".")):"";
     }
+
+
 }

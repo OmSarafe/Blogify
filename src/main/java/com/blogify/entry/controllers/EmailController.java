@@ -16,7 +16,9 @@ public class EmailController {
 
     @GetMapping("/email/sent")
     public ResponseEntity<String>sentEmail(
-            @RequestParam String to,@RequestParam String subject,@RequestParam String body){
+            @RequestParam String to,
+            @RequestParam String subject,
+            @RequestParam String body){
         emailService.sendEmail(to, subject, body);
         return ResponseEntity.ok("Email sent Successfully to :"+to);
     }
