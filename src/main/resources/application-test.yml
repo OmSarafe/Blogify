@@ -7,11 +7,11 @@ spring:
 #  security:
 #    user:
 #      name: om
-#      password: om@1234
+#      password: ${SECURITY_PASSWORD}
   datasource:
     url: jdbc:mysql://localhost:3306/bloghive_test
-    username: root
-    password: OmSarafe@0719
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: update
@@ -29,5 +29,5 @@ spring:
             enable: 'true'
             required: 'true'
     host: smtp.gmail.com
-    username: omsarafe@gmail.com
-    password: kcsk guue kptm hqve
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
