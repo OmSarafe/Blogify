@@ -1,5 +1,7 @@
 # Blogify
 
+[![Build and test](https://github.com/OmSarafe/Blogify/actions/workflows/build.yml/badge.svg)](https://github.com/OmSarafe/Blogify/actions/workflows/build.yml)
+
 A RESTful blogging backend built with **Java 17** and **Spring Boot**. It supports users, posts (with image upload), and tags, with paginated and sortable listings, post search, email notifications, and Spring Security authentication.
 
 ## Tech stack
@@ -23,7 +25,7 @@ The project follows a layered **controller → service → repository** structur
 
 ## API overview
 
-All endpoints require authentication (HTTP Basic). With the `dev` profile, the base URL is `http://localhost:8081/dev/api/Blogify`.
+Sign-up (`POST /Users`) is public; every other endpoint requires HTTP Basic authentication with a registered user's username and password. Passwords are stored as BCrypt hashes and are never returned by the API. With the `dev` profile, the base URL is `http://localhost:8081/dev/api/Blogify`.
 
 | Method | Endpoint | Description |
 |---|---|---|
@@ -37,7 +39,7 @@ All endpoints require authentication (HTTP Basic). With the `dev` profile, the b
 | DELETE | `/posts/{id}/user/{userId}` | Delete a post |
 | GET | `/Users?page=0&size=2` | List users (paginated) |
 | GET | `/Users/{id}` | Get a user |
-| POST | `/Users` | Create a user |
+| POST | `/Users` | Sign up (create a user, no auth needed) |
 | POST | `/Users/{id}` | Update a user |
 | DELETE | `/Users/{id}` | Delete a user |
 | GET / POST | `/tags` | List / create tags |
@@ -87,6 +89,16 @@ $env:MAIL_PASSWORD="your_gmail_app_password"
 
 The API will be available at `http://localhost:8081/dev/api/Blogify`.
 
+### 4. Create a user and call the API
+
+```bash
+curl -X POST http://localhost:8081/dev/api/Blogify/Users \
+  -H "Content-Type: application/json" \
+  -d '{"username":"om","password":"secret123","email":"om@example.com"}'
+
+curl -u om:secret123 "http://localhost:8081/dev/api/Blogify/posts?page=0&size=2"
+```
+
 ### Profiles
 
 | Profile | Port | Database |
@@ -94,3 +106,13 @@ The API will be available at `http://localhost:8081/dev/api/Blogify`.
 | `dev` | 8081 | `bloghive_dev` |
 | `test` | 8082 | `bloghive_test` |
 | `prod` | 8083 | `bloghive_prod` |
+
+## Tests and CI
+
+Run the tests (needs MySQL running with a `bloghive_test` database and the environment variables above):
+
+```bash
+./mvnw test
+```
+
+GitHub Actions builds the project on every push, runs the unit tests (JUnit 5 and Mockito) against a MySQL service container, then starts the API and checks sign-up, login and password hashing end to end.
