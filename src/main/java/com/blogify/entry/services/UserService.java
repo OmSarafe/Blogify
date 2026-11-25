@@ -13,6 +13,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -30,10 +31,14 @@ public class UserService {
     @Autowired
     UserRepositories userRepositories;
 
+    @Autowired
+    PasswordEncoder passwordEncoder;
+
     public User create(User user){
         if (userRepositories.findByUsername(user.getUsername()).isPresent()){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"user with username "+user.getUsername()+" is already existing");
         }
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
         return userRepositories.save(user);
     }
 
@@ -52,7 +57,7 @@ public class UserService {
             existingUser.setUsername(user.getUsername());
         }
         if(user.getPassword() !=null){
-            existingUser.setPassword(user.getPassword());
+            existingUser.setPassword(passwordEncoder.encode(user.getPassword()));
         }
         if(user.getEmail() !=null){
             existingUser.setEmail(user.getEmail());
@@ -91,7 +96,6 @@ public class UserService {
         UserResponseDtos userResponseDtos=new UserResponseDtos();
         userResponseDtos.setId(user.getId());
         userResponseDtos.setUsername(user.getUsername());
-        userResponseDtos.setPassword(user.getPassword());
         userResponseDtos.setEmail(user.getEmail());
         userResponseDtos.setCreatedDate(user.getCreateDate());
         userResponseDtos.setLastModifiedDate(user.getLastmodifieddate());

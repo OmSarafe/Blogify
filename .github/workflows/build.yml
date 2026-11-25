@@ -1,0 +1,84 @@
+name: Build and test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: bloghive_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      MAIL_USERNAME: ci@example.com
+      MAIL_PASSWORD: not-used-in-ci
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Build and run tests
+        run: |
+          chmod +x mvnw
+          ./mvnw -B verify
+
+      - name: Start the API and check sign-up and login
+        run: |
+          java -jar target/Blogify-0.0.1-SNAPSHOT.jar > app.log 2>&1 &
+          BASE=http://localhost:8082/test/api/Blogify
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' $BASE/Users || true)
+            [ "$code" != "000" ] && break
+            sleep 2
+          done
+
+          echo "Sign up a new user (public endpoint)"
+          code=$(curl -s -o signup.json -w '%{http_code}' -H 'Content-Type: application/json' \
+            -d '{"username":"ciuser","password":"secret123","email":"ci@example.com"}' $BASE/Users)
+          cat signup.json; echo
+          [ "$code" = "201" ]
+          if grep -qi password signup.json; then echo "Password leaked in response"; exit 1; fi
+
+          echo "Duplicate username is rejected with 400"
+          code=$(curl -s -o /dev/null -w '%{http_code}' -H 'Content-Type: application/json' \
+            -d '{"username":"ciuser","password":"secret123","email":"ci@example.com"}' $BASE/Users)
+          [ "$code" = "400" ]
+
+          echo "Login with the right password works"
+          ID=$(python3 -c "import json;print(json.load(open('signup.json'))['id'])")
+          code=$(curl -s -o user.json -w '%{http_code}' -u ciuser:secret123 $BASE/Users/$ID)
+          cat user.json; echo
+          [ "$code" = "200" ]
+          if grep -qi password user.json; then echo "Password leaked in response"; exit 1; fi
+
+          echo "Wrong password is rejected with 401"
+          code=$(curl -s -o /dev/null -w '%{http_code}' -u ciuser:wrongpass $BASE/Users/$ID)
+          [ "$code" = "401" ]
+
+          echo "Password is stored as a BCrypt hash"
+          mysql -h 127.0.0.1 -uroot -proot bloghive_test -N -e "select password from user where username='ciuser'" | grep -q '^\$2[aby]\$'
+          echo "All API checks passed"
+
+      - name: Show app log on failure
+        if: failure()
+        run: cat app.log || true
